@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Y2H Screen | Hurt Laboratory</title>
+    <link rel="stylesheet" href="./css/xiNET.css">
+    <link rel="stylesheet" href="./css/bootstrap.css">
+    <link rel="stylesheet" href="./css/flat-ui.css">
+    <link rel="stylesheet" href="./css/demo.css">
+    <link rel="stylesheet" href="./css/jquery-ui-1.10.3.custom.css">
+
+
+    <!--libraries-->
+    <script type="text/javascript" src="./lib/d3.js"></script>
+    <script type="text/javascript" src="./lib/colorbrewer.js"></script>
+    <script type="text/javascript" src="./lib/jsdas.js"></script>
+    <script type="text/javascript" src="./lib/rgbcolor.js"></script>
+    <script type="text/javascript" src="./lib/prototype.js"></script>
+    <script type="text/javascript" src="./lib/slider.js"></script>
+    <script type="text/javascript" src="./js/FileSaver.js"></script>
+    <!--xiNET-->
+    <script type="text/javascript" src="./js/controller/Init.js"></script>
+    <script type="text/javascript" src="./js/controller/MouseEvents.js"></script>
+    <script type="text/javascript" src="./js/controller/Layout.js"></script>
+    <script type="text/javascript" src="./js/controller/Refresh.js"></script>
+    <script type="text/javascript" src="./js/controller/ToolTips.js"></script>
+    <script type="text/javascript" src="./js/model/Match.js"></script>
+    <script type="text/javascript" src="./js/model/Link.js"></script>
+    <script type="text/javascript" src="./js/model/Protein.js"></script>
+    <script type="text/javascript" src="./js/model/Annotations.js"></script>
+    <script type="text/javascript" src="./js/model/ProteinLink.js"></script>
+    <script type="text/javascript" src="./js/model/ResidueLink.js"></script>
+    <script type="text/javascript" src="./js/controller/ExternalControls.js"></script>
+    <script type="text/javascript" src="./js/model/Rotator.js"></script>
+    <script type="text/javascript" src="./js/controller/DASUtil.js"></script>
+    <script type="text/javascript" src="./js/controller/xiNET_Storage.js"></script>
+    <script type="text/javascript" src="./js/controller/ReadCSV.js"></script>
+    <script type="text/javascript" src="./js/controller/Fasta.js"></script>
+    <script type="text/javascript" src="./lib/jquery-1.9.1.js"></script>
+    <script type="text/javascript" src="./lib/jquery-ui-1.10.3.custom.js"></script>
+</head>
+<body>
+<div id="outerDiv">
+    <div class="controls">
+
+        <button class="btn btn-inverse help" onclick="toggleHelpPanel()">Help</button>
+        <button class="btn btn-inverse info" onclick="toggleInfoPanel()">Protein info</button>
+        <button class="btn btn-inverse exportsvg" onclick="xlv.exportSVG('networkSVG');">Export</button>
+        <button class="btn btn-inverse autolayout" onclick="xlv.autoLayout();">Auto</button>
+        <button class="btn btn-inverse resetzoom" onclick="xlv.resetZoom();">Reset Zoom</button>
+        <!--
+                                        <input type="text" class="span2" value="" data-slider-min="-2"
+                                        data-slider-max="3" data-slider-step="0.01" data-slider-value="[-2,3]" id="filter" >
+        -->
+        <div class="controlGroup" id="scoreSlider">
+            <p class="scoreLabel" id="scoreLabel1"></p>
+            <div id="track1" class="sliderbar">
+                <div class="selected" id="handle1"></div>
+            </div> <!-- track1 sliderbar -->
+            <p class="scoreLabel" id="scoreLabel2"></p>
+            <p id="debug1">&nbsp;&nbsp;Score Cut-Off:</p>
+        </div> <!-- outlined scoreSlider -->
+        <div class="controlGroup"><p>Self Interactions&nbsp;
+            <input autocomplete="off" checked="checked" id="internal" onclick=
+                    "xlv.hideInternal(!document.getElementById('internal').checked)"
+                   type="checkbox"></p>
+        </div>
+        <div class="controlGroup"><p>Direct links&nbsp;
+            <input autocomplete="off" id="neighbour" onclick=
+                    "xlv.toggleneighboursonly( document.getElementById('neighbour').checked)"
+                   type="checkbox"></p>
+        </div>
+        <div class="controlGroup"><p>LSU&nbsp;
+            <input autocomplete="off" checked="checked" id="lsu" onclick=
+                    "hideCategory(!document.getElementById('lsu').checked, 'l', document.getElementById('neighbour').checked)"
+                   type="checkbox"></p>
+        </div>
+        <div class="controlGroup"><p>SSU&nbsp;
+            <input autocomplete="off" checked="checked" id="ssu" onclick=
+                    "hideCategory(!document.getElementById('ssu').checked, 's', document.getElementById('neighbour').checked)"
+                   type="checkbox"></p>
+        </div>
+        <div class="controlGroupInput"><p>&nbsp; Search:&nbsp;
+            <input type="text" id="search" onkeyup="xlv.search(this.value)" placeholder="Enter name here....">
+        </p>
+        </div>
+    </div>
+
+    <div id="networkContainer"></div>
+
+    <div class="overlay-box" id="infoPanel">
+        <div>
+            <div id="networkCaption">
+                <h4>Drag'n'Drop Demo Mod for reading relations</h4>
+                <p>This page allows you to drag and drop the data files on to it.</p>
+                <p></p>
+                <p>Drag and drop the CSV data file onto the empty space.</p>
+            </div>
+        </div>
+    </div>
+    <div class="overlay-box" id="helpPanel">
+        <div>
+            <table class="hor-minimalist-a" bordercolor="#eee">
+                <tr>
+                    <b>Y2H Interaction indicated by arrow from AD-protein to BD-protein<br></td>
+                </tr>
+                <tr>
+                    <td>Zoom</td>
+                    <td>Mouse wheel</td>
+                </tr>
+                <tr>
+                    <td>Graphic size</td>
+                    <td>press Ctrl/- or Ctrl/+ or
+                        on a Mac its Cmd/- or Cmd/+
+                    </td>
+                </tr>
+                <tr>
+                    <td>Move graphic</td>
+                    <td>Click & drag on background</td>
+                </tr>
+                <tr>
+                    <td>Move protein</td>
+                    <td>Click & drag on protein</td>
+                </tr>
+                <tr>
+                    <td>Move network</td>
+                    <td>Click & drag on link</td>
+                </tr>
+                <tr>
+                    <td>Hide/show protein and its links</td>
+                    <td>Right-click on protein</td>
+                </tr>
+                <tr>
+                    <td>Hide/show specific link</td>
+                    <td>Right-click on specific link</td>
+                </tr>
+                <tr>
+                    <td>Inspect original data of the BD-protein against the AD-library</td>
+                    <td>Click on protein & check popup window (allow popups)</td>
+                </tr>
+                <tr>
+                    <td>Show only direct links of selected protein</td>
+                    <td>Check "Direct links" and select protein</td>
+                </tr>
+                <tr>
+                    <td>Hide/show biogenesis factors of the small or large subunit</td>
+                    <td>Check/uncheck "LSU" or "SSU"</td>
+                </tr>
+            </table>
+            <p>&nbsp;</p>
+            <p>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    //<![CDATA[
+
+    helpShown = false;
+    infoShown = false;
+    function toggleHelpPanel() {
+        if (helpShown) {
+            hideHelpPanel();
+        }
+        else {
+            showHelpPanel();
+        }
+    }
+
+    function toggleInfoPanel() {
+        if (infoShown) {
+            hideInfoPanel();
+        }
+        else {
+            showInfoPanel();
+        }
+    }
+
+    function showHelpPanel() {
+        helpShown = true;
+        d3.select("#helpPanel").style('display', 'block');
+        d3.select("#helpPanel").transition().style("top", "0%").duration(700);
+        d3.select(".help").attr('class', "btn help");
+    }
+    function hideHelpPanel() {
+        helpShown = false;
+        d3.select("#helpPanel").transition().style("top", "100%").duration(700);
+        d3.select("#helpPanel").transition().style('display', 'none').delay(700);
+        ;
+        d3.select(".help").attr('class', "btn btn-inverse help");
+    }
+    function showInfoPanel() {
+        infoShown = true;
+        d3.select("#infoPanel").style('display', 'block');
+        d3.select("#infoPanel").transition().style("top", "0%").duration(700);
+        d3.select(".info").attr('class', "btn info");
+    }
+    function hideInfoPanel() {
+        infoShown = false;
+        d3.select("#infoPanel").transition().style("top", "100%").duration(700);
+        d3.select("#infoPanel").transition().style('display', 'none').delay(700);
+        ;
+        d3.select(".info").attr('class', "btn btn-inverse info");
+    }
+    //]]>
+</script>
+
+<script type="text/javascript">
+    //<![CDATA[
+    function showpopup() {
+        xlv.popup = open('./data/media/start.pdf', 'Info', 'width=1000,height=1000');
+    }
+    toggleInfoPanel();
+    var targetDiv = document.getElementById('networkContainer');
+    var messageDiv = document.getElementById('networkCaption');
+    var xlv = new xinet.Controller(targetDiv);
+    xlv.setMessageElement(messageDiv);
+    showpopup();
+    d3.text('./data/data.csv', "text/csv", function (text) {
+        xlv.readCSV(text);
+    });
+    function initSlider() {
+        if (xlv.scores != null) {
+            document.getElementById('scoreLabel1').innerHTML = xlv.scores.min.toFixed(2);
+            document.getElementById('scoreLabel2').innerHTML = xlv.scores.max.toFixed(2) + '&nbsp;&nbsp;';
+            document.getElementById('debug1').innerHTML = 'Score Cut-Off:' + xlv.scores.min.toFixed(2);
+            new Control.Slider('handle1', 'track1', {
+                sliderValue: 0,
+                onSlide: function (v) {
+                    var cut = calcCutOff(v);
+                    document.getElementById('debug1').innerHTML = 'Score Cut-Off: ' + cut;
+                    xlv.setCutOff(cut);
+                },
+                onChange: function (v) {
+                    var cut = calcCutOff(v);
+                    document.getElementById('debug1').innerHTML = 'Score Cut-Off: ' + cut;
+                    xlv.setCutOff(cut);
+                }
+            });
+            function calcCutOff(v) {
+                var result = (v * (xlv.scores.max - xlv.scores.min)) + xlv.scores.min;
+                result = result.toFixed(2);
+                return result;
+            }
+        }
+        else {
+            //no score
+            document.getElementById('scoreSlider').setAttribute("style", "display:none;");
+        }
+    }
+    //]]>
+</script>
+<script>
+    //     $('#filter').slider().on('slide', function(ev) {
+    //         filtersChanged();
+    //     });
+
+    function hideCategory(bool, name, bool2) {
+        if (name === "l") {
+            xlv.lsu = !bool;
+        }
+        else if (name === "s") {
+            xlv.ssu = !bool;
+        }
+        console.log(bool2)
+        xlv.toggleneighboursonly(bool2, true)
+    }
+
+</script>
+</body>
+</html>
