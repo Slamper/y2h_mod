@@ -158,7 +158,7 @@ xinet.Controller = function (targetDiv) {
 
     this.tooltip_bg = document.createElementNS(xinet.svgns, "rect");
     this.tooltip_bg.setAttribute('class', 'tooltip_bg');
-    this.tooltip_bg.setAttribute('id', 'tooltip_bg');
+    //~ this.tooltip_bg.setAttribute('id', 'tooltip_bg');
 
     this.tooltip_bg.setAttribute('fill-opacity', 0.75);
     this.tooltip_bg.setAttribute('stroke-opacity', 1);
